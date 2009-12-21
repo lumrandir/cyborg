@@ -42,7 +42,7 @@ class Application
 
   def generate_lattice size, empty_count
     lattice = Matrix.zero(size).to_a
-    srand(Time.now.to_i)
+    srand Time.now.to_i
     empty_count.times do
       i, j = rand(size), rand(size)
       while lattice[i][j] == 1.0 || i == j || lattice[j][size - 1 - i] == 1.0 ||
@@ -54,7 +54,34 @@ class Application
     return lattice
   end
   private :generate_lattice
-  
+
+  def generate_order size
+    order = []
+    srand Time.now.to_i
+    size.times do
+      to_add = rand(size)
+      while order.detect { |e| e == to_add }
+        to_add = rand(size)
+      end
+      order << to_add
+    end
+    return order
+  end
+  private :generate_order
+    
+  def lumren what
+    order = generate_order what.size
+    encrypted = ""
+    decrypted = " " * what.size
+    order.each do |i|
+      encrypted.concat what[i]
+    end
+    order.each_with_index do |e, i|
+      decrypted[e] = encrypted[i]
+    end
+    return [encrypted, decrypted]
+  end
+
   def monoalphabetic what, shift
     encrypted = what.encode("cp1251").bytes.map { |b|
       ((1.0 * b + shift) % 256).to_i.chr.force_encoding("cp1251")

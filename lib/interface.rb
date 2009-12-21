@@ -51,11 +51,13 @@ module Interface
       radio2 = Gtk::RadioButton.new radio1, "_Многоалфавитная подстановка"
       radio3 = Gtk::RadioButton.new radio1, "_Перестановка"
       radio4 = Gtk::RadioButton.new radio1, "_Решётка Кардано"
+      radio5 = Gtk::RadioButton.new radio1, "_Собственный метод"
       mode_box = Gtk::VBox.new
       mode_box.pack_start radio1, false, false, 0
       mode_box.pack_start radio2, false, false, 0
       mode_box.pack_start radio3, false, false, 0
       mode_box.pack_start radio4, false, false, 0
+      mode_box.pack_start radio5, false, false, 0
 
       #mode and buttons
       bottom_box = Gtk::HBox.new
@@ -117,6 +119,10 @@ module Interface
           )
         elsif radio4.active?
           encrypted_view.buffer.text, decrypted_view.buffer.text = @app.cardano(
+            source_view.buffer.text.force_encoding("utf-8")
+          )
+        elsif radio5.active?
+          encrypted_view.buffer.text, decrypted_view.buffer.text = @app.lumren(
             source_view.buffer.text.force_encoding("utf-8")
           )
         end
