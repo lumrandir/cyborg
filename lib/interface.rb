@@ -116,6 +116,9 @@ module Interface
             source_view.buffer.text.force_encoding("utf-8"), key_entry.text.force_encoding("utf-8")
           )
         elsif radio4.active?
+          encrypted_view.buffer.text, decrypted_view.buffer.text = @app.cardano(
+            source_view.buffer.text.force_encoding("utf-8")
+          )
         end
       }
 

@@ -1,5 +1,6 @@
 require 'lib/interface'
 require 'pp'
+require 'mathn'
 
 class Application
   include Interface
@@ -8,6 +9,52 @@ class Application
     @window = CyWindow.new self
   end
 
+  def cardano what
+    while (what.size ** 0.5) % 2 != 0
+      what.concat " "
+    end
+    size = (what.size ** 0.5).to_i
+    empty_count = what.size / 4
+    lattice = [[1.0,0,0,0,1.0,0],[0, 1.0,0,0,0,0],[0,0,1.0,0,1.0,0],[0,0,0,0,0,1.0],
+      [1.0,0,1.0,0,0,0],[0,0,0,1.0,0,0]
+    ]
+    encrypted = ""
+    source = what.scan /.{#{size}}/
+    4.times do
+      lattice.each_with_index do |r, i|
+        r.each_with_index do |c, j|
+          if c == 1.0
+            encrypted.concat source[i][j]
+          end
+        end
+      end
+      lattice = rotate(lattice)
+    end
+    return [encrypted, what]
+  end
+
+  def generate_key length
+    key = String.new
+    srand Time.now.to_i
+    length.times { key << rand(127).chr.encode("utf-8") }
+    key
+  end
+
+  def generate_lattice size, empty_count
+    lattice = Matrix.zero(size).to_a
+    srand(Time.now.to_i)
+    empty_count.times do
+      i, j = rand(size), rand(size)
+      while lattice[i][j] == 1.0 || i == j || lattice[j][size - 1 - i] == 1.0 ||
+          lattice[size - 1 - i][size - 1 - j] == 1.0 || lattice[size - 1 - j][i] == 1.0
+        i, j = rand(size), rand(size)
+      end
+      lattice[i][j] = 1.0 if lattice[i][j] == 0.0
+    end
+    return lattice
+  end
+  private :generate_lattice
+  
   def monoalphabetic what, shift
     encrypted = what.encode("cp1251").bytes.map { |b|
       ((1.0 * b + shift) % 256).to_i.chr.force_encoding("cp1251")
@@ -15,20 +62,6 @@ class Application
     decrypted = encrypted.encode("cp1251").bytes.map { |b|
       ((256 + b - shift) % 256).to_i.chr.force_encoding("cp1251")
     }.join("").encode("utf-8")
-    return [encrypted, decrypted]
-  end
-
-  def polyalphabetic what, key
-    ar = []
-    what.encode("cp1251").bytes.map { |b| b }.each_with_index { |b, i|
-      ar << ((1.0 * b + key[i % key.size].encode("cp1251").bytes.first) % 256).to_i.chr.force_encoding("cp1251")
-    }
-    encrypted = ar.join("").encode("utf-8")
-    ar = []
-    encrypted.encode("cp1251").bytes.map { |b| b }.each_with_index { |b, i|
-      ar << ((256 + b - key[i % key.size].encode("cp1251").bytes.first) % 256).to_i.chr.force_encoding("cp1251")
-    }
-    decrypted = ar.join("").encode("utf-8")
     return [encrypted, decrypted]
   end
 
@@ -58,10 +91,30 @@ class Application
     return [encrypted, decrypted]
   end
 
-  def generate_key length
-    key = String.new
-    srand Time.now.to_i
-    length.times { key << rand(127).chr.encode("utf-8") }
-    key
+  def polyalphabetic what, key
+    ar = []
+    what.encode("cp1251").bytes.map { |b| b }.each_with_index { |b, i|
+      ar << ((1.0 * b + key[i % key.size].encode("cp1251").bytes.first) % 256).to_i.chr.force_encoding("cp1251")
+    }
+    encrypted = ar.join("").encode("utf-8")
+    ar = []
+    encrypted.encode("cp1251").bytes.map { |b| b }.each_with_index { |b, i|
+      ar << ((256 + b - key[i % key.size].encode("cp1251").bytes.first) % 256).to_i.chr.force_encoding("cp1251")
+    }
+    decrypted = ar.join("").encode("utf-8")
+    return [encrypted, decrypted]
   end
+
+  def rotate lattice
+    size = lattice.size
+    rotated = []
+    lattice.each_index do |i|
+      lattice[i].each_index do |j|
+        rotated[j] ||= []
+        rotated[j][size - 1 - i] = lattice[i][j]
+      end
+    end
+    return rotated
+  end
+  private :rotate
 end
